@@ -1,0 +1,223 @@
+services:
+  # Mysql service
+  mysql.service:
+    image: mysql:latest
+    container_name: ${SERVICE_ENV}_mysql_service
+    restart: unless-stopped
+    tty: true
+    ports:
+      - ${DOCKER_MYSQL_PORT}:3306
+    volumes:
+      - ./docker/mysql/conf.d/my.cnf:/etc/mysql/conf.d/my.cnf:ro
+      - ./volumes/mysql/data:/var/lib/mysql
+      - ./volumes/mysql/logs:/var/log/mysql
+    environment:
+      TZ: ${SERVICE_TIMEZONE}
+      MYSQL_ROOT_PASSWORD: ${DOCKER_MYSQL_ROOT_PASSWORD}
+    networks:
+      - sync-network
+
+  # MariaDB service
+  mariadb.service:
+    image: mariadb:latest
+    container_name: ${SERVICE_ENV}_mariadb_service
+    restart: unless-stopped
+    tty: true
+    ports:
+      - ${DOCKER_MARIADB_PORT}:3306
+    volumes:
+      - ./docker/mariadb/conf.d/my.cnf:/etc/mysql/conf.d/my.cnf:ro
+      - ./volumes/mariadb/data:/var/lib/mysql
+      - ./volumes/mariadb/logs:/var/log/mysql
+    environment:
+      TZ: ${SERVICE_TIMEZONE}
+      MYSQL_ROOT_PASSWORD: ${DOCKER_MARIADB_ROOT_PASSWORD}
+    networks:
+      - sync-network
+
+  # Percona MySQL service
+  percona.service:
+    image: percona:latest
+    container_name: ${SERVICE_ENV}_percona_service
+    restart: unless-stopped
+    tty: true
+    ports:
+      - ${DOCKER_PERCONA_PORT}:3306
+    volumes:
+      - ./docker/percona/mysql/conf.d/my.cnf:/etc/mysql/conf.d/my.cnf:ro
+      - ./volumes/percona/mysql/data:/var/lib/mysql
+      - ./volumes/percona/mysql/logs:/var/log/mysql
+    environment:
+      TZ: ${SERVICE_TIMEZONE}
+      MYSQL_ROOT_PASSWORD: ${DOCKER_PERCONA_ROOT_PASSWORD}
+    networks:
+      - sync-network
+
+  # Postgres service
+  postgres.service:
+    image: postgres:latest
+    container_name: ${SERVICE_ENV}_postgres_service
+    restart: unless-stopped
+    tty: true
+    ports:
+      - ${DOCKER_POSTGRES_PORT}:5432
+    volumes:
+      - ./docker/postgres/conf/postgresql.conf:/etc/postgresql/postgresql.conf
+      - ./volumes/postgres/data:/var/lib/postgresql/data
+    environment:
+      TZ: ${SERVICE_TIMEZONE}
+      PGTZ: ${SERVICE_TIMEZONE}
+      POSTGRES_PASSWORD: ${DOCKER_POSTGRES_PASSWORD}
+    networks:
+      - sync-network
+
+  # Sqlserver service
+  sqlserver.service:
+    image: mcr.microsoft.com/mssql/server:latest
+    container_name: ${SERVICE_ENV}_sqlserver_service
+    restart: unless-stopped
+    tty: true
+    ports:
+      - ${DOCKER_MSSQL_PORT}:1433
+    volumes:
+      - ./volumes/mssql/data:/var/opt/mssql/data
+    environment:
+      ACCEPT_EULA: 'Y'
+      MSSQL_PID: Express
+      MSSQL_SA_PASSWORD: ${DOCKER_MSSQL_SA_PASSWORD}
+    networks:
+      - sync-network
+
+  # MongoDB service
+  mongodb.service:
+    image: mongo:latest
+    container_name: ${SERVICE_ENV}_mongodb_service
+    restart: unless-stopped
+    tty: true
+    ports:
+      - ${DOCKER_MONGO_PORT}:27017
+    volumes:
+      - ./volumes/mongo/data:/data/db
+      - ./volumes/mongo/conf:/data/configdb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${DOCKER_MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${DOCKER_MONGO_INITDB_ROOT_PASSWORD}
+    networks:
+      - sync-network
+
+  # Redis service
+  redis.service:
+    image: redis:latest
+    container_name: ${SERVICE_ENV}_redis_service
+    restart: unless-stopped
+    tty: true
+    ports:
+      - ${DOCKER_REDIS_PORT}:6379
+    volumes:
+      - ./volumes/redis/data:/data
+    networks:
+      - sync-network
+
+  # RabbitMQ service
+  rabbitmq.service:
+    image: rabbitmq:3-management
+    container_name: ${SERVICE_ENV}_rabbitmq_service
+    restart: unless-stopped
+    tty: true
+    ports:
+      - ${DOCKER_RABBITMQ_PORT}:5672
+      - ${DOCKER_RABBITMQ_MANAGEMENT_PORT}:15672
+    volumes:
+      - ./volumes/rabbitmq/data:/var/lib/rabbitmq
+      - ./volumes/rabbitmq/log:/var/log/rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${DOCKER_RABBITMQ_DEFAULT_USER}
+      RABBITMQ_DEFAULT_PASS: ${DOCKER_RABBITMQ_DEFAULT_PASS}
+
+  # Portainer service
+  portainer.service:
+    image: portainer/portainer-ce
+    container_name: ${SERVICE_ENV}_portainer_service
+    restart: always
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./volumes/portainer/data:/data
+      - ./volumes/portainer/certs:/certs
+    ports:
+      - ${DOCKER_PORTAINER_PORT}:9000
+      - ${DOCKER_PORTAINER_SSL_PORT}:9443
+    networks:
+      - sync-network
+
+  # Minio service
+
+  minio.service:
+    image: minio/minio:latest
+    container_name: ${SERVICE_ENV}_minio_service
+    restart: unless-stopped
+    tty: true
+    command: server /data --console-address :9001
+    ports:
+      - ${DOCKER_MINIO_PORT}:9000
+      - ${DOCKER_MINIO_PORT_CONSOLE}:9001
+    volumes:
+      - ./volumes/s3-minio/data:/data
+    environment:
+      MINIO_ROOT_USER: ${DOCKER_MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${DOCKER_MINIO_ROOT_PASSWORD}
+    networks:
+      - sync-network
+
+  # Mailpit service
+  mailpit.service:
+    image: axllent/mailpit:latest
+    container_name: ${SERVICE_ENV}_mailpit_service
+    restart: unless-stopped
+    tty: true
+    volumes:
+      - ./volumes/mailpit/data:/data
+    ports:
+      - ${DOCKER_MAILPIT_PORT}:1025
+      - ${DOCKER_MAILPIT_INBOX_PORT}:8025
+    environment:
+      TZ: ${SERVICE_TIMEZONE}
+    networks:
+      - sync-network
+
+  # Vault service
+  vault.service:
+    image: hashicorp/vault:latest
+    container_name: ${SERVICE_ENV}_vault_service
+    restart: unless-stopped
+    tty: true
+    volumes:
+      - ./docker/vault/config.d:/vault/config.d
+      - ./volumes/vault/file:/vault/file
+      - ./volumes/vault/logs:/vault/logs
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: ${DOCKER_VAULT_DEV_ROOT_TOKEN_ID}
+    ports:
+      - ${DOCKER_VAULT_PORT}:8200
+    cap_add:
+      - IPC_LOCK
+    networks:
+      - sync-network
+
+  # Metabase service
+  metabase.service:
+    image: metabase/metabase:latest
+    container_name: ${SERVICE_ENV}_metabase_service
+    restart: unless-stopped
+    tty: true
+    ports:
+      - ${DOCKER_METABASE_PORT}:3000
+    networks:
+      - sync-network
+
+networks:
+  sync-network:
+    driver: bridge
+    external: true
